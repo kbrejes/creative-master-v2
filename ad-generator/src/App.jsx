@@ -72,6 +72,7 @@ function App() {
   const audioRef = useRef(null);
   const musicRef = useRef(null);
   const phoneRef = useRef(null);
+  const playingAudioRef = useRef(null); // Track which audio file is currently playing
 
   // Editing
   const [editingShot, setEditingShot] = useState(null);
@@ -245,6 +246,8 @@ function App() {
                 return updated;
               });
             } else if (evt.type === "audio") {
+              // Just store the audio - don't play immediately
+              // Audio plays when it's the current shot's turn (handled by effect)
               setShots(prev => {
                 const updated = [...prev];
                 if (updated[evt.shot]) {
@@ -256,13 +259,6 @@ function App() {
                 }
                 return updated;
               });
-              // Play audio IMMEDIATELY when it arrives
-              if (audioRef.current && evt.file) {
-                // Duck the music while voice plays
-                if (musicRef.current) musicRef.current.volume = musicVolume * 0.15;
-                audioRef.current.src = `${API}/vo/${evt.file}`;
-                audioRef.current.play().catch(() => {});
-              }
             } else if (evt.type === "video") {
               setShots(prev => {
                 const updated = [...prev];
@@ -301,6 +297,28 @@ function App() {
       setPhase("input");
     }
   };
+
+  // Effect: Play audio for current shot when both video and audio are ready (during generation)
+  // This ensures shots play sequentially like a film, not choppy cuts
+  useEffect(() => {
+    if (phase !== "generating") return;
+
+    const currentShotData = shots[currentShot];
+    if (!currentShotData) return;
+
+    // Wait for BOTH video and audio to be ready
+    if (!currentShotData.audio_file) return;
+    if (!currentShotData.selected_video) return;
+
+    // Already playing this audio file? Skip
+    if (currentShotData.audio_file === playingAudioRef.current) return;
+
+    // Both ready - start playback for this shot
+    if (musicRef.current) musicRef.current.volume = musicVolume * 0.15;
+    audioRef.current.src = `${API}/vo/${currentShotData.audio_file}`;
+    audioRef.current.play().catch(() => {});
+    playingAudioRef.current = currentShotData.audio_file;
+  }, [phase, currentShot, shots, musicVolume]);
 
   // Playback control
   const shot = shots[currentShot] || null;
@@ -346,6 +364,8 @@ function App() {
   const handleAudioEnd = useCallback(() => {
     // Restore music volume after voice ends
     if (musicRef.current) musicRef.current.volume = musicVolume;
+    // Reset audio tracking so next shot can play
+    playingAudioRef.current = null;
 
     // During generation: auto-advance to next shot
     if (phase === "generating") {
@@ -657,10 +677,10 @@ function App() {
       );
     }
 
-    // GENERATING PHASE: Show video + audio progressively as they arrive
+    // GENERATING PHASE: Show current shot only (others generate silently in background)
     if (phase === "generating") {
-      // Find the current shot being played (the one with audio playing, or latest with video)
-      const currentShotData = shots[currentShot] || shots[shots.length - 1];
+      // Only show the current shot - don't jump ahead to newer shots
+      const currentShotData = shots[currentShot];
       const videoUrl = currentShotData?.selected_video?.stream_url || currentShotData?.selected_video?.url;
       const currentSub = currentShotData?.sub || "";
       const shotsWithVideo = shots.filter(s => s.selected_video).length;
