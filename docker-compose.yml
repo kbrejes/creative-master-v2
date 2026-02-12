@@ -21,6 +21,7 @@ services:
     networks:
       - default
       - pm-agent_pm-network
+      - caddy_network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8899/api/workflows"]
@@ -31,6 +32,8 @@ services:
 
 networks:
   pm-agent_pm-network:
+    external: true
+  caddy_network:
     external: true
 
 volumes:
