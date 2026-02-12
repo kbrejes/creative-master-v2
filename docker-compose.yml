@@ -1,0 +1,37 @@
+services:
+  preview-api:
+    build: .
+    container_name: creative-master
+    ports:
+      - "8899:8899"
+    environment:
+      - PEXELS_API_KEY=${PEXELS_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LOCAL_VIDEO_DIR=${LOCAL_VIDEO_DIR:-/videos}
+      - TELEGRAM_API_ID=${TELEGRAM_API_ID:-31816963}
+      - TELEGRAM_API_HASH=${TELEGRAM_API_HASH}
+    volumes:
+      # Persist Telegram session across restarts
+      - ./tg_stats_session.session:/app/tg_stats_session.session
+      # Persist rendered videos (optional, for debugging)
+      - preview_rendered:/tmp/creative_master/rendered
+      # Mount local video library (optional - set LOCAL_VIDEOS_PATH in .env)
+      - ${LOCAL_VIDEOS_PATH:-./videos}:/videos:ro
+    networks:
+      - default
+      - pm-agent_pm-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8899/api/workflows"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  pm-agent_pm-network:
+    external: true
+
+volumes:
+  preview_rendered:

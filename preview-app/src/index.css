@@ -1,0 +1,11 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html {
+  height: -webkit-fill-available;
+}
+body {
+  background: #111;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+}
