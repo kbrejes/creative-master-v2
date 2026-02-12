@@ -186,6 +186,8 @@ function App() {
     setPhase("generating");
     setShots([]);
     setCurrentShot(0);
+    setPlaying(true); // Auto-play during generation
+    playingAudioRef.current = null; // Reset audio tracking
     setCtaStatus("idle");
     setCtaVideoUrl(null);
 
@@ -302,6 +304,7 @@ function App() {
   // This ensures shots play sequentially like a film, not choppy cuts
   useEffect(() => {
     if (phase !== "generating") return;
+    if (!playing) return; // Don't play if user paused
 
     const currentShotData = shots[currentShot];
     if (!currentShotData) return;
@@ -318,7 +321,7 @@ function App() {
     audioRef.current.src = `${API}/vo/${currentShotData.audio_file}`;
     audioRef.current.play().catch(() => {});
     playingAudioRef.current = currentShotData.audio_file;
-  }, [phase, currentShot, shots, musicVolume]);
+  }, [phase, currentShot, shots, musicVolume, playing]);
 
   // Playback control
   const shot = shots[currentShot] || null;
@@ -684,11 +687,13 @@ function App() {
       const videoUrl = currentShotData?.selected_video?.stream_url || currentShotData?.selected_video?.url;
       const currentSub = currentShotData?.sub || "";
       const shotsWithVideo = shots.filter(s => s.selected_video).length;
+      const hasVideoOptions = currentShotData?.video_options?.length > 1;
 
       return (
         <>
           {videoUrl ? (
             <video
+              ref={videoRef}
               key={videoUrl}
               src={resolveVideoUrl(videoUrl)}
               style={S.video}
@@ -696,6 +701,7 @@ function App() {
               playsInline
               loop
               autoPlay
+              onClick={togglePlay}
             />
           ) : (
             <KaleidoscopePlaceholder />
@@ -705,9 +711,45 @@ function App() {
               <span style={S.subText}>{currentSub}</span>
             </div>
           )}
-          <div style={S.generatingBadge}>
-            {shotsWithVideo}/{shots.length || "..."} shots
+
+          {/* Shot navigation - can browse already generated shots */}
+          <div style={S.shotNav}>
+            <button
+              style={{ ...S.shotNavBtn, opacity: currentShot > 0 ? 1 : 0.3 }}
+              onClick={() => handleShotChange(-1)}
+              disabled={currentShot === 0}
+            >
+              ◀
+            </button>
+            <span style={S.shotBadgeInline}>
+              {currentShot + 1}/{shots.length || 1}
+            </span>
+            <button
+              style={{ ...S.shotNavBtn, opacity: currentShot < shots.length - 1 ? 1 : 0.3 }}
+              onClick={() => handleShotChange(1)}
+              disabled={currentShot >= shots.length - 1}
+            >
+              ▶
+            </button>
           </div>
+
+          {/* Generating badge */}
+          <div style={S.generatingBadge}>
+            ⏳ {shotsWithVideo}/{shots.length || "..."} ready
+          </div>
+
+          {/* Play/pause indicator */}
+          {!playing && videoUrl && <div style={S.playIcon} onClick={togglePlay}>▶</div>}
+
+          {/* Swipe to change video (if multiple options) */}
+          {hasVideoOptions && (
+            <div style={S.swipeHint}>
+              <button style={S.swipeBtn} onClick={() => handleSwipeVideo(-1)}>◀</button>
+              <span style={{ fontSize: 10, color: "#888" }}>swipe video</span>
+              <button style={S.swipeBtn} onClick={() => handleSwipeVideo(1)}>▶</button>
+            </div>
+          )}
+
           {ctaStatus === "generating" && (
             <div style={S.ctaLoading}>
               <span className="spinner">⏳</span>
