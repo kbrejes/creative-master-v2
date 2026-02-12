@@ -86,6 +86,7 @@ class TelegramScreenRecorder:
                 device_scale_factor=3,  # Retina display
                 is_mobile=True,
                 has_touch=True,
+                ignore_https_errors=True,  # Fix SSL cert issues
                 record_video_dir=str(output_dir),
                 record_video_size={
                     "width": IPHONE_16_PRO_MAX_WIDTH,

@@ -2106,23 +2106,36 @@ async def _render_cta_clip(channel: str, post_preview: str, work_dir: Path, dura
 
     Records the channel's public preview with scrolling, composites into
     iPhone frame with pointing finger animation.
+
+    Falls back to static CTA if recording fails (e.g., network issues).
     """
     from src.telegram.telegram_cta_compositor import TelegramCTACompositor
     from src.telegram.telegram_screen_recorder import TelegramScreenRecorder
 
+    recording_path = None
+
+    # Step 1: Try to record the channel's public preview
     try:
-        # Step 1: Record the channel's public preview
         logger.info(f"Recording Telegram channel: {channel}")
         recorder = TelegramScreenRecorder(channel=channel, duration_seconds=duration)
         recording_path = await recorder.record(output_dir=work_dir)
 
-        if not recording_path.exists():
+        if not recording_path or not recording_path.exists():
             logger.warning("Screen recording not created")
-            return None
+            recording_path = None
+        else:
+            logger.info(f"Screen recording created: {recording_path}")
+    except Exception as e:
+        logger.warning(f"Screen recording failed (network issue?): {e}")
+        recording_path = None
 
-        logger.info(f"Screen recording created: {recording_path}")
+    # Fallback: create a static CTA if recording failed
+    if recording_path is None:
+        logger.info("Using static CTA fallback")
+        return await _render_static_cta(channel, work_dir, duration)
 
-        # Step 2: Composite into iPhone frame with pointing finger
+    # Step 2: Composite into iPhone frame with pointing finger
+    try:
         cta_clip = work_dir / "cta_clip.mp4"
         compositor = TelegramCTACompositor(
             screen_recording=recording_path,
@@ -2152,13 +2165,111 @@ async def _render_cta_clip(channel: str, post_preview: str, work_dir: Path, dura
 
         if proc.returncode != 0:
             logger.error(f"CTA scaling failed: {stderr.decode()[-200:]}")
-            # Fall back to unscaled version
-            return cta_clip
+            return cta_clip  # Fall back to unscaled version
 
         logger.info(f"CTA clip created: {final_clip}")
         return final_clip
     except Exception as e:
         logger.exception(f"CTA clip error: {e}")
+        return None
+
+
+async def _render_static_cta(channel: str, work_dir: Path, duration: float = 4.0) -> Path | None:
+    """Render a static CTA clip when live recording fails.
+
+    Creates a simple video with iPhone frame and channel name/URL.
+    """
+    from PIL import Image, ImageDraw, ImageFont
+
+    try:
+        # Find iPhone frame
+        project_root = Path(__file__).parent.parent
+        frame_paths = [
+            project_root / "ad-generator" / "src" / "assets" / "iphone-frame.png",
+            project_root / "assets" / "iphone-frame.png",
+        ]
+        frame_path = None
+        for p in frame_paths:
+            if p.exists():
+                frame_path = p
+                break
+
+        if not frame_path:
+            logger.error("iPhone frame not found for static CTA")
+            return None
+
+        # Load frame and create composition
+        frame = Image.open(frame_path).convert("RGBA")
+        frame_w, frame_h = frame.size
+
+        # Create dark background for screen area
+        screen = Image.new("RGBA", (frame_w, frame_h), (20, 20, 30, 255))
+
+        # Add channel text
+        draw = ImageDraw.Draw(screen)
+
+        # Try to load a font, fall back to default
+        try:
+            font_large = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 80)
+            font_small = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 40)
+        except Exception:
+            font_large = ImageFont.load_default()
+            font_small = font_large
+
+        # Clean channel name
+        channel_name = channel.strip()
+        if channel_name.startswith("https://t.me/"):
+            channel_name = "@" + channel_name.replace("https://t.me/", "")
+        elif channel_name.startswith("t.me/"):
+            channel_name = "@" + channel_name.replace("t.me/", "")
+        elif not channel_name.startswith("@"):
+            channel_name = "@" + channel_name
+
+        # Draw Telegram icon placeholder and text
+        center_x = frame_w // 2
+        center_y = frame_h // 2
+
+        # Draw "Telegram" label
+        draw.text((center_x, center_y - 100), "Telegram", font=font_large, fill=(255, 255, 255), anchor="mm")
+
+        # Draw channel name
+        draw.text((center_x, center_y + 50), channel_name, font=font_large, fill=(100, 180, 255), anchor="mm")
+
+        # Draw "Subscribe" CTA
+        draw.text((center_x, center_y + 200), "Subscribe →", font=font_small, fill=(150, 150, 150), anchor="mm")
+
+        # Composite frame on top of screen
+        result = Image.alpha_composite(screen, frame)
+
+        # Save as image
+        img_path = work_dir / "cta_static.png"
+        result.save(img_path)
+
+        # Convert to video with FFmpeg
+        video_path = work_dir / "cta_final.mp4"
+        proc = await asyncio.create_subprocess_exec(
+            "ffmpeg", "-y",
+            "-loop", "1",
+            "-i", str(img_path),
+            "-t", str(duration),
+            "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black",
+            "-c:v", VIDEO_ENCODER, *VIDEO_ENCODER_OPTS,
+            "-pix_fmt", "yuv420p",
+            str(video_path),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        _, stderr = await proc.communicate()
+
+        if proc.returncode != 0:
+            logger.error(f"Static CTA video creation failed: {stderr.decode()[-200:]}")
+            return None
+
+        logger.info(f"Static CTA created: {video_path}")
+        return video_path
+
+    except Exception as e:
+        logger.exception(f"Static CTA error: {e}")
         return None
 
 
