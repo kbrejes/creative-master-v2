@@ -10,8 +10,8 @@ from typing import Any
 
 import httpx
 
-from src.providers.providers.base import ProviderCapability, ProviderHealth, ProviderInfo
-from src.providers.providers.image.protocol import ImageRequest, ImageResponse
+from src.providers.base import ProviderCapability, ProviderHealth, ProviderInfo
+from src.providers.image.protocol import ImageRequest, ImageResponse
 
 
 class ReplicateFluxProvider:

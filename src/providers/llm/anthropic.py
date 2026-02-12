@@ -8,8 +8,8 @@ from typing import Any
 
 import anthropic
 
-from src.providers.providers.base import ProviderCapability, ProviderHealth, ProviderInfo
-from src.providers.providers.llm.protocol import LLMRequest, LLMResponse
+from src.providers.base import ProviderCapability, ProviderHealth, ProviderInfo
+from src.providers.llm.protocol import LLMRequest, LLMResponse
 
 # Pricing per 1K tokens (as of late 2024)
 PRICING = {

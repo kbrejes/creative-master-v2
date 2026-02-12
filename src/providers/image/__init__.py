@@ -1,6 +1,6 @@
 """Image generation providers."""
 
-from src.providers.providers.image.protocol import (
+from src.providers.image.protocol import (
     ImageProviderProtocol,
     ImageRequest,
     ImageResponse,

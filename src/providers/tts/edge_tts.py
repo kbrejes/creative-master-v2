@@ -10,8 +10,8 @@ from pathlib import Path
 
 import edge_tts
 
-from src.providers.providers.base import ProviderCapability, ProviderHealth, ProviderInfo
-from src.providers.providers.tts.protocol import TTSRequest, TTSResponse
+from src.providers.base import ProviderCapability, ProviderHealth, ProviderInfo
+from src.providers.tts.protocol import TTSRequest, TTSResponse
 
 
 class EdgeTTSProvider:

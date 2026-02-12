@@ -9,8 +9,8 @@ from pathlib import Path
 
 import httpx
 
-from src.providers.providers.base import ProviderCapability, ProviderHealth, ProviderInfo
-from src.providers.providers.stock.protocol import StockRequest, StockResponse
+from src.providers.base import ProviderCapability, ProviderHealth, ProviderInfo
+from src.providers.stock.protocol import StockRequest, StockResponse
 
 
 class PexelsProvider:

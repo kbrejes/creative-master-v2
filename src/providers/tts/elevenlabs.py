@@ -10,8 +10,8 @@ from pathlib import Path
 
 import httpx
 
-from src.providers.providers.base import ProviderCapability, ProviderHealth, ProviderInfo
-from src.providers.providers.tts.protocol import TTSRequest, TTSResponse
+from src.providers.base import ProviderCapability, ProviderHealth, ProviderInfo
+from src.providers.tts.protocol import TTSRequest, TTSResponse
 
 # Pricing: ~$0.30 per 1K characters
 COST_PER_1K_CHARS = 0.30

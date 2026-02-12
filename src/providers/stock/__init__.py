@@ -1,6 +1,6 @@
 """Stock asset providers."""
 
-from src.providers.providers.stock.protocol import (
+from src.providers.stock.protocol import (
     StockProviderProtocol,
     StockRequest,
     StockResponse,

@@ -1,6 +1,6 @@
 """LLM providers."""
 
-from src.providers.providers.llm.protocol import (
+from src.providers.llm.protocol import (
     LLMProviderProtocol,
     LLMRequest,
     LLMResponse,

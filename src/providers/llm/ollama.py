@@ -9,8 +9,8 @@ from typing import Any
 
 import httpx
 
-from src.providers.providers.base import ProviderCapability, ProviderHealth, ProviderInfo
-from src.providers.providers.llm.protocol import LLMRequest, LLMResponse
+from src.providers.base import ProviderCapability, ProviderHealth, ProviderInfo
+from src.providers.llm.protocol import LLMRequest, LLMResponse
 
 
 class OllamaProvider:

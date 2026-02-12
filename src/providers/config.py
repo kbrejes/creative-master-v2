@@ -9,7 +9,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from src.providers.providers.base import ProviderCapability
+from src.providers.base import ProviderCapability
 
 
 class CapabilityConfig(BaseModel):

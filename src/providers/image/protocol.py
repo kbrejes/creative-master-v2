@@ -9,7 +9,7 @@ from typing import Literal, Protocol
 
 from pydantic import BaseModel, Field, field_validator
 
-from src.providers.providers.base import ProviderHealth, ProviderInfo
+from src.providers.base import ProviderHealth, ProviderInfo
 
 
 class ImageRequest(BaseModel):

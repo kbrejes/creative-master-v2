@@ -7,12 +7,12 @@ configuration, health, cost, and preferences.
 
 from typing import Protocol, runtime_checkable
 
-from src.providers.providers.base import (
+from src.providers.base import (
     ProviderCapability,
     ProviderHealth,
     ProviderInfo,
 )
-from src.providers.providers.config import ProviderConfig
+from src.providers.config import ProviderConfig
 
 
 class NoProviderAvailableError(Exception):
