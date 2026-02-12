@@ -200,6 +200,8 @@ function App() {
       ? { content: contentForGeneration, language, duration: dur, voice: selectedVoice, telegram_channel: isTelegram ? url : "" }
       : { url: contentForGeneration, language, duration: dur, voice: selectedVoice };
 
+    console.log("[DEBUG] Generation request:", { isDirectContent, isTelegram, telegram_channel: body.telegram_channel, url });
+
     // If Telegram, start CTA generation indicator
     if (isTelegram) {
       setCtaStatus("generating");

@@ -79,8 +79,8 @@ class TelegramCTACompositor:
 
         # Check multiple locations (source assets, built dist, assets folder)
         search_dirs = [
-            project_root / "preview-app" / "src" / "assets",
-            project_root / "preview-app" / "dist" / "assets",
+            project_root / "ad-generator" / "src" / "assets",
+            project_root / "ad-generator" / "dist" / "assets",
             project_root / "assets",
         ]
 
@@ -103,7 +103,7 @@ class TelegramCTACompositor:
             project_root / "assets" / "pointing-finger.png",
             project_root / "assets" / "pointing-finger.gif",
             project_root / "assets" / "pointing-finger.webm",
-            project_root / "preview-app" / "src" / "assets" / "pointing-finger.png",
+            project_root / "ad-generator" / "src" / "assets" / "pointing-finger.png",
         ]
 
         for path in possible_paths:

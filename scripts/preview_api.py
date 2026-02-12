@@ -1738,6 +1738,7 @@ async def generate_live(body: dict):
     duration = body.get("duration", 30)
     selected_voice = body.get("voice")  # OpenAI voice ID (alloy, echo, fable, onyx, nova, shimmer)
     telegram_channel = body.get("telegram_channel", "")  # For Telegram posts - uses Open Loop prompt
+    print(f"[DEBUG generate-live] telegram_channel='{telegram_channel}', url='{url}', content_len={len(content)}")
 
     async def event_stream():
         try:
