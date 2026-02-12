@@ -2375,7 +2375,7 @@ async def save_video(body: dict):
 # =============================================================================
 
 # Check for built frontend (Docker or local build)
-FRONTEND_DIR = Path(__file__).resolve().parent.parent / "preview-app" / "dist"
+FRONTEND_DIR = Path(__file__).resolve().parent.parent / "ad-generator" / "dist"
 if FRONTEND_DIR.exists():
     from fastapi.responses import FileResponse
 
@@ -2402,7 +2402,7 @@ if FRONTEND_DIR.exists():
 
     logger.info(f"Serving frontend from {FRONTEND_DIR}")
 else:
-    logger.info("No frontend build found - API only mode (run 'npm run build' in preview-app/)")
+    logger.info("No frontend build found - API only mode (run 'npm run build' in ad-generator/)")
 
 
 if __name__ == "__main__":

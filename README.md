@@ -6,7 +6,7 @@ Video ad generator from URLs and Telegram posts.
 
 ```
 creative_master_v2/
-├── preview-app/              # React frontend (Vite)
+├── ad-generator/              # React frontend (Vite)
 │   └── src/App.jsx           # Single-file UI
 │
 ├── scripts/
@@ -58,7 +58,7 @@ creative_master_v2/
 python3 scripts/preview_api.py
 
 # Frontend (separate terminal)
-cd preview-app && npm install && npm run dev
+cd ad-generator && npm install && npm run dev
 ```
 
 ## Deployment

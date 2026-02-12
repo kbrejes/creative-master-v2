@@ -3,9 +3,9 @@
 FROM node:20-alpine AS frontend-builder
 
 WORKDIR /app/frontend
-COPY preview-app/package*.json ./
+COPY ad-generator/package*.json ./
 RUN npm ci
-COPY preview-app/ ./
+COPY ad-generator/ ./
 RUN npm run build
 
 # Stage 2: Python backend with all dependencies
@@ -60,7 +60,7 @@ COPY scripts/preview_api.py ./scripts/
 COPY assets/ ./assets/
 
 # Copy built frontend
-COPY --from=frontend-builder /app/frontend/dist ./preview-app/dist
+COPY --from=frontend-builder /app/frontend/dist ./ad-generator/dist
 
 # Create directories for runtime data
 RUN mkdir -p /tmp/creative_master/preview_vo /tmp/creative_master/rendered
