@@ -370,9 +370,16 @@ function App() {
     // Reset audio tracking so next shot can play
     playingAudioRef.current = null;
 
-    // During generation: auto-advance to next shot
+    // During generation: auto-advance to next shot (but don't go past the end)
     if (phase === "generating") {
-      setCurrentShot(prev => prev + 1);
+      if (currentShot < shots.length - 1) {
+        setCurrentShot(prev => prev + 1);
+      } else {
+        // At the last shot - mark as "finished playback" so audio doesn't replay
+        // Keep playingAudioRef set so effect won't replay
+        playingAudioRef.current = shots[currentShot]?.audio_file || "done";
+      }
+      // Video loops silently until "done" arrives
       return;
     }
 
@@ -735,7 +742,9 @@ function App() {
 
           {/* Generating badge */}
           <div style={S.generatingBadge}>
-            ⏳ {shotsWithVideo}/{shots.length || "..."} ready
+            {shotsWithVideo === shots.length && shots.length > 0
+              ? "✨ Finishing..."
+              : `⏳ ${shotsWithVideo}/${shots.length || "..."} ready`}
           </div>
 
           {/* Play/pause indicator */}
