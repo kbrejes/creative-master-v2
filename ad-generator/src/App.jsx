@@ -822,16 +822,16 @@ function App() {
         </div>
       </div>
 
-      {/* Controls below phone (only in ready phase) */}
-      {phase === "ready" && (
+      {/* Controls below phone (visible during generating and ready) */}
+      {(phase === "generating" || phase === "ready") && (
         <div style={S.controlsBelow}>
           {/* Voice selector */}
-          <div style={S.controlRow}>
-            <button style={S.controlBtn} onClick={() => handleVoiceChange(-1)}>◀</button>
+          <div style={{ ...S.controlRow, opacity: phase === "ready" ? 1 : 0.5 }}>
+            <button style={S.controlBtn} onClick={() => handleVoiceChange(-1)} disabled={phase !== "ready"}>◀</button>
             <span style={S.controlLabel}>
               🎙 {voices[voiceIndex]?.name || "Voice"}
             </span>
-            <button style={S.controlBtn} onClick={() => handleVoiceChange(1)}>▶</button>
+            <button style={S.controlBtn} onClick={() => handleVoiceChange(1)} disabled={phase !== "ready"}>▶</button>
           </div>
 
           {/* Music selector */}
@@ -872,8 +872,12 @@ function App() {
           </div>
 
           {/* Save button */}
-          <button style={S.saveBtn} onClick={handleSave} disabled={saving}>
-            {saving ? "⏳ Rendering..." : "💾 Save to Camera Roll"}
+          <button
+            style={{ ...S.saveBtn, opacity: phase === "ready" ? 1 : 0.5 }}
+            onClick={handleSave}
+            disabled={saving || phase !== "ready"}
+          >
+            {saving ? "⏳ Rendering..." : phase === "ready" ? "💾 Save to Camera Roll" : "⏳ Generating..."}
           </button>
 
           {/* Reset */}
