@@ -1844,6 +1844,27 @@ async def generate_live(body: dict):
                         except (json.JSONDecodeError, KeyError, IndexError):
                             continue
 
+                        # Check for completed tasks and yield results IMMEDIATELY
+                        for shot_idx, task in list(audio_tasks.items()):
+                            if task.done():
+                                try:
+                                    result = task.result()
+                                    if result and "file" in result:
+                                        yield f"data: {json.dumps({'type': 'audio', **result})}\n\n"
+                                except Exception:
+                                    pass
+                                del audio_tasks[shot_idx]
+
+                        for shot_idx, task in list(video_tasks.items()):
+                            if task.done():
+                                try:
+                                    result = task.result()
+                                    if result and "options" in result:
+                                        yield f"data: {json.dumps({'type': 'video', **result})}\n\n"
+                                except Exception:
+                                    pass
+                                del video_tasks[shot_idx]
+
             # Process remaining buffer
             if buffer.strip():
                 try:

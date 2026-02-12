@@ -228,10 +228,12 @@ function App() {
 
             if (evt.type === "music") {
               setMusic(evt.track);
-              // Pre-load music but don't auto-play - will sync with video
+              // Start playing music IMMEDIATELY
               if (musicRef.current && evt.track?.url) {
                 musicRef.current.src = evt.track.url;
                 musicRef.current.volume = musicVolume;
+                musicRef.current.loop = true;
+                musicRef.current.play().catch(() => {});
               }
             } else if (evt.type === "sub") {
               setShots(prev => {
@@ -254,6 +256,13 @@ function App() {
                 }
                 return updated;
               });
+              // Play audio IMMEDIATELY when it arrives
+              if (audioRef.current && evt.file) {
+                // Duck the music while voice plays
+                if (musicRef.current) musicRef.current.volume = musicVolume * 0.15;
+                audioRef.current.src = `${API}/vo/${evt.file}`;
+                audioRef.current.play().catch(() => {});
+              }
             } else if (evt.type === "video") {
               setShots(prev => {
                 const updated = [...prev];
@@ -335,6 +344,16 @@ function App() {
   }, [currentShot, shot, playing, phase]);
 
   const handleAudioEnd = useCallback(() => {
+    // Restore music volume after voice ends
+    if (musicRef.current) musicRef.current.volume = musicVolume;
+
+    // During generation: auto-advance to next shot
+    if (phase === "generating") {
+      setCurrentShot(prev => prev + 1);
+      return;
+    }
+
+    // Ready phase: advance or loop back
     if (currentShot < shots.length - 1) {
       setCurrentShot(prev => prev + 1);
     } else {
@@ -344,7 +363,7 @@ function App() {
       musicRef.current?.pause();
       if (musicRef.current) musicRef.current.currentTime = 0;
     }
-  }, [currentShot, shots.length]);
+  }, [currentShot, shots.length, phase, musicVolume]);
 
   const togglePlay = () => {
     if (playing) {
@@ -638,22 +657,41 @@ function App() {
       );
     }
 
-    // GENERATING PHASE: Kaleidoscope + live subs
+    // GENERATING PHASE: Show video + audio progressively as they arrive
     if (phase === "generating") {
-      const latestSub = shots[shots.length - 1]?.sub || "";
+      // Find the current shot being played (the one with audio playing, or latest with video)
+      const currentShotData = shots[currentShot] || shots[shots.length - 1];
+      const videoUrl = currentShotData?.selected_video?.stream_url || currentShotData?.selected_video?.url;
+      const currentSub = currentShotData?.sub || "";
+      const shotsWithVideo = shots.filter(s => s.selected_video).length;
+
       return (
         <>
-          <KaleidoscopePlaceholder />
-          {latestSub && (
+          {videoUrl ? (
+            <video
+              key={videoUrl}
+              src={resolveVideoUrl(videoUrl)}
+              style={S.video}
+              muted
+              playsInline
+              loop
+              autoPlay
+            />
+          ) : (
+            <KaleidoscopePlaceholder />
+          )}
+          {currentSub && (
             <div style={{ ...S.subOverlay, top: `${subtitleY * 100}%`, bottom: "auto", transform: "translateY(-50%)" }}>
-              <span style={S.subText}>{latestSub}</span>
+              <span style={S.subText}>{currentSub}</span>
             </div>
           )}
-          <div style={S.generatingBadge}>Generating...</div>
+          <div style={S.generatingBadge}>
+            {shotsWithVideo}/{shots.length || "..."} shots
+          </div>
           {ctaStatus === "generating" && (
             <div style={S.ctaLoading}>
               <span className="spinner">⏳</span>
-              <span>Recording Telegram CTA...</span>
+              <span>Recording CTA...</span>
             </div>
           )}
         </>
