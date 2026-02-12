@@ -370,16 +370,18 @@ function App() {
     // Reset audio tracking so next shot can play
     playingAudioRef.current = null;
 
-    // During generation: auto-advance to next shot (but don't go past the end)
+    // During generation: auto-advance to next shot
     if (phase === "generating") {
       if (currentShot < shots.length - 1) {
+        // More regular shots to play
         setCurrentShot(prev => prev + 1);
+      } else if (ctaStatus === "ready" && ctaVideoUrl && currentShot === shots.length - 1) {
+        // Last regular shot done, CTA is ready - advance to CTA (index = shots.length)
+        setCurrentShot(shots.length);
       } else {
-        // At the last shot - mark as "finished playback" so audio doesn't replay
-        // Keep playingAudioRef set so effect won't replay
+        // At the last shot, no CTA yet - mark as "finished playback" so audio doesn't replay
         playingAudioRef.current = shots[currentShot]?.audio_file || "done";
       }
-      // Video loops silently until "done" arrives
       return;
     }
 
@@ -393,7 +395,7 @@ function App() {
       musicRef.current?.pause();
       if (musicRef.current) musicRef.current.currentTime = 0;
     }
-  }, [currentShot, shots.length, phase, musicVolume]);
+  }, [currentShot, shots.length, shots, phase, musicVolume, ctaStatus, ctaVideoUrl]);
 
   const togglePlay = () => {
     if (playing) {
@@ -689,12 +691,16 @@ function App() {
 
     // GENERATING PHASE: Show current shot only (others generate silently in background)
     if (phase === "generating") {
-      // Only show the current shot - don't jump ahead to newer shots
+      // Check if we're on the CTA shot (index = shots.length)
+      const isCtaShot = currentShot === shots.length && ctaStatus === "ready" && ctaVideoUrl;
       const currentShotData = shots[currentShot];
-      const videoUrl = currentShotData?.selected_video?.stream_url || currentShotData?.selected_video?.url;
-      const currentSub = currentShotData?.sub || "";
+      const videoUrl = isCtaShot
+        ? ctaVideoUrl
+        : (currentShotData?.selected_video?.stream_url || currentShotData?.selected_video?.url);
+      const currentSub = isCtaShot ? "" : (currentShotData?.sub || "");
       const shotsWithVideo = shots.filter(s => s.selected_video).length;
-      const hasVideoOptions = currentShotData?.video_options?.length > 1;
+      const hasVideoOptions = !isCtaShot && currentShotData?.video_options?.length > 1;
+      const totalWithCta = shots.length + (ctaStatus === "ready" ? 1 : 0);
 
       return (
         <>
@@ -702,11 +708,11 @@ function App() {
             <video
               ref={videoRef}
               key={videoUrl}
-              src={resolveVideoUrl(videoUrl)}
+              src={isCtaShot ? `${API}${ctaVideoUrl}` : resolveVideoUrl(videoUrl)}
               style={S.video}
               muted
               playsInline
-              loop
+              loop={!isCtaShot} // CTA doesn't loop - plays once
               autoPlay
               onClick={togglePlay}
             />
@@ -717,6 +723,9 @@ function App() {
             <div style={{ ...S.subOverlay, top: `${subtitleY * 100}%`, bottom: "auto", transform: "translateY(-50%)" }}>
               <span style={S.subText}>{currentSub}</span>
             </div>
+          )}
+          {isCtaShot && (
+            <div style={S.ctaLabel}>CTA - Telegram Channel</div>
           )}
 
           {/* Shot navigation - can browse already generated shots */}
@@ -729,12 +738,12 @@ function App() {
               ◀
             </button>
             <span style={S.shotBadgeInline}>
-              {currentShot + 1}/{shots.length || 1}
+              {currentShot + 1}/{totalWithCta || 1}{isCtaShot ? " CTA" : ""}
             </span>
             <button
-              style={{ ...S.shotNavBtn, opacity: currentShot < shots.length - 1 ? 1 : 0.3 }}
+              style={{ ...S.shotNavBtn, opacity: currentShot < totalWithCta - 1 ? 1 : 0.3 }}
               onClick={() => handleShotChange(1)}
-              disabled={currentShot >= shots.length - 1}
+              disabled={currentShot >= totalWithCta - 1}
             >
               ▶
             </button>
@@ -742,9 +751,11 @@ function App() {
 
           {/* Generating badge */}
           <div style={S.generatingBadge}>
-            {shotsWithVideo === shots.length && shots.length > 0
-              ? "✨ Finishing..."
-              : `⏳ ${shotsWithVideo}/${shots.length || "..."} ready`}
+            {isCtaShot
+              ? "✨ CTA Ready"
+              : shotsWithVideo === shots.length && shots.length > 0
+                ? "✨ Finishing..."
+                : `⏳ ${shotsWithVideo}/${shots.length || "..."} ready`}
           </div>
 
           {/* Play/pause indicator */}
@@ -759,7 +770,7 @@ function App() {
             </div>
           )}
 
-          {ctaStatus === "generating" && (
+          {ctaStatus === "generating" && !isCtaShot && (
             <div style={S.ctaLoading}>
               <span className="spinner">⏳</span>
               <span>Recording CTA...</span>
