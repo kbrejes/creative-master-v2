@@ -57,10 +57,13 @@ RUN playwright install chromium
 # Copy source code
 COPY src/ ./src/
 COPY scripts/preview_api.py ./scripts/
+
+# Copy assets (may be empty, that's ok)
 COPY assets/ ./assets/
 
-# Copy built frontend
+# Copy built frontend (includes iPhone frame in assets/)
 COPY --from=frontend-builder /app/frontend/dist ./ad-generator/dist
+COPY --from=frontend-builder /app/frontend/src/assets ./ad-generator/src/assets
 
 # Create directories for runtime data
 RUN mkdir -p /tmp/creative_master/preview_vo /tmp/creative_master/rendered
